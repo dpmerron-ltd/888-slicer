@@ -14,15 +14,18 @@ if [ ! -x "$source_app/Contents/MacOS/OrcaSlicer" ]; then
     exit 1
 fi
 if [ "$arch" = "universal" ]; then
-    lipo -verify_arch arm64 x86_64 "$source_app/Contents/MacOS/OrcaSlicer"
+    lipo "$source_app/Contents/MacOS/OrcaSlicer" -verify_arch arm64 x86_64
 else
-    lipo -verify_arch "$arch" "$source_app/Contents/MacOS/OrcaSlicer"
+    lipo "$source_app/Contents/MacOS/OrcaSlicer" -verify_arch "$arch"
 fi
 
 mkdir -p "$repo_dir/dist"
 stage_dir="$(mktemp -d "$repo_dir/dist/888-slicer-$arch.XXXXXX")"
 app="$stage_dir/888 Slicer.app"
 ditto "$source_app" "$app"
+# Finder/file-provider metadata can invalidate code signing (notably when the
+# checkout lives on an iCloud-synced Desktop). Clean only this disposable copy.
+xattr -cr "$app"
 cp "$repo_dir/config/printers.example.json" "$stage_dir/printers.example.json"
 cp "$repo_dir/docs/888-slicer.md" "$stage_dir/README.md"
 cp "$repo_dir/LICENSE.txt" "$stage_dir/LICENSE.txt"
