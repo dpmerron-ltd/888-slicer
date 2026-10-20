@@ -1,7 +1,7 @@
 #include "MainFrame.hpp"
 #include "libslic3r/LanPrinterConfig.hpp"
 #include "libslic3r/AppConfig.hpp"
-#include "slic3r/Utils/IPrinterAgent.hpp"
+#include "slic3r/Utils/NetworkAgentFactory.hpp"
 #include "slic3r/GUI/DeviceCore/DevManager.h"
 #include <wx/file.h>
 

@@ -6,6 +6,7 @@
 #include <slic3r/GUI/DeviceManager.hpp>
 #include <libslic3r/AppConfig.hpp>
 #include "slic3r/Utils/IPrinterAgent.hpp"
+#include "slic3r/Utils/NetworkAgentFactory.hpp"
 #include "slic3r/Utils/CloudProvider.hpp"
 #include <slic3r/Utils/NetworkAgent.hpp>
 #include <slic3r/Utils/OrcaCloudServiceAgent.hpp>
