@@ -1,4 +1,9 @@
 #include "MainFrame.hpp"
+#include "libslic3r/LanPrinterConfig.hpp"
+#include "libslic3r/AppConfig.hpp"
+#include "slic3r/Utils/IPrinterAgent.hpp"
+#include "slic3r/GUI/DeviceCore/DevManager.h"
+#include <wx/file.h>
 
 #include <wx/event.h>
 #include "slic3r/GUI/Event.hpp"
@@ -3068,6 +3073,11 @@ void MainFrame::init_menubar_as_editor()
             [this](wxCommandEvent&) { load_config_file(); }, "menu_import", nullptr,
             [](){return true; }, this);
 
+        append_menu_item(import_menu, wxID_ANY, _L("Import LAN Printers") + dots,
+            _L("Load P1S printer addresses and access codes from a JSON file"),
+            [this](wxCommandEvent&) { import_lan_printers(); }, "menu_import", nullptr,
+            [](){return true; }, this);
+
         append_submenu(fileMenu, import_menu, wxID_ANY, _L("Import"), "");
 
 
@@ -3953,6 +3963,103 @@ void MainFrame::export_config()
 }
 
 // Load a config file containing a Print, Filament & Printer preset.
+void MainFrame::import_lan_printers()
+{
+    wxFileDialog dialog(this, _L("Import LAN Printers"), wxEmptyString, wxEmptyString,
+                        _L("JSON files (*.json)|*.json"), wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    std::vector<LanPrinterConfig> printers;
+    try {
+        wxFile file(dialog.GetPath(), wxFile::read);
+        if (!file.IsOpened() || file.Length() < 0) {
+            show_error(this, _L("Could not read the LAN printer configuration."));
+            return;
+        }
+        if (file.Length() > static_cast<wxFileOffset>(MAX_LAN_PRINTER_CONFIG_BYTES)) {
+            show_error(this, _L("The LAN printer configuration exceeds the 1 MiB size limit."));
+            return;
+        }
+        std::string contents(static_cast<std::size_t>(file.Length()), '\0');
+        const auto bytes_read = file.Read(contents.data(), contents.size());
+        if (bytes_read < 0 || static_cast<std::size_t>(bytes_read) != contents.size()) {
+            show_error(this, _L("Could not read the LAN printer configuration."));
+            return;
+        }
+        printers = parse_lan_printer_config(contents);
+    } catch (const std::exception& error) {
+        show_error(this, wxString::FromUTF8(error.what()));
+        return;
+    }
+
+    auto* config  = wxGetApp().app_config;
+    auto* manager = wxGetApp().getDeviceManager();
+    if (!config) {
+        show_error(this, _L("Printer settings are not ready. Please try again after startup."));
+        return;
+    }
+
+    // Check every entry before modifying the saved list. Never reassign a device
+    // owned by another printer agent, or overwrite a different printer at an IP.
+    for (const auto& printer : printers) {
+        for (const auto& entry : config->get_local_machines()) {
+            const auto& existing = entry.second;
+            if ((existing.dev_id == printer.serial && !existing.printer_agent_id.empty() &&
+                 existing.printer_agent_id != BBL_PRINTER_AGENT_ID) ||
+                (existing.dev_id != printer.serial && (existing.dev_ip == printer.ip || existing.dev_name == printer.name) &&
+                 std::none_of(printers.begin(), printers.end(), [&](const LanPrinterConfig& imported) {
+                     return imported.serial == existing.dev_id;
+                 }))) {
+                show_error(this, _L("The imported printers conflict with an existing device. Remove the conflicting device or correct the configuration first."));
+                return;
+            }
+        }
+    }
+
+    // Disconnect an entry whose credentials/address are about to change. Import
+    // never starts a print or automatically connects to a newly imported device.
+    if (manager && wxGetApp().getAgent()) {
+        const auto* selected = manager->get_selected_machine();
+        if (selected && std::any_of(printers.begin(), printers.end(), [&](const LanPrinterConfig& printer) {
+                return printer.serial == selected->get_dev_id();
+            }))
+            manager->set_selected_machine("");
+    }
+
+    for (const auto& printer : printers) {
+        BBLocalMachine machine;
+        machine.dev_name         = printer.name;
+        machine.dev_ip           = printer.ip;
+        machine.dev_id           = printer.serial;
+        machine.printer_type     = "C12"; // Bambu Lab P1S
+        machine.printer_agent_id = BBL_PRINTER_AGENT_ID;
+        machine.access_code      = printer.access_code;
+        if (manager)
+            manager->insert_local_device(machine, "lan", "free", "", machine.access_code);
+        else
+            config->update_local_machine(machine);
+    }
+    try {
+        config->save();
+        if (config->dirty()) {
+            show_error(this, _L("The printers were loaded, but their settings could not be saved. Check the configuration folder permissions and import again."));
+            return;
+        }
+    } catch (const std::exception&) {
+        // Do not echo filesystem/JSON exceptions that may contain credentials.
+        show_error(this, _L("The printers were loaded, but their settings could not be saved. Check the configuration folder permissions and import again."));
+        return;
+    }
+    MessageDialog message(this,
+        _L("LAN printers imported. Select your Bambu Lab P1S printer preset, slice a model, then choose the printer in Print plate.\n\n"
+           "The Bambu network plugin must be installed. No Bambu account login is required. "
+           "The printer must permit local print commands; firmware with authorization controls requires LAN-only and Developer Mode on the printer.\n\n"
+           "Existing entries with the same serial number were updated. The access codes are stored in this app's local settings."),
+        _L("Import LAN Printers"), wxOK | wxICON_INFORMATION);
+    message.ShowModal();
+}
+
 void MainFrame::load_config_file()
 {
     //BBS do not load config file

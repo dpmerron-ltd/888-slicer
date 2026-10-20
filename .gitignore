@@ -55,3 +55,8 @@ __pycache__/
 /.test/
 docs/superpowers/
 ctest_results.xml
+
+# Local printer credentials and distributable fork builds.
+/printers.json
+*.printers.json
+/dist/

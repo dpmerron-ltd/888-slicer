@@ -11,7 +11,7 @@
 	<key>CFBundleIconFile</key>
 	<string>${MACOSX_BUNDLE_ICON_FILE}</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.orcaslicer.OrcaSlicer</string>
+	<string>local.888slicer.app</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLongVersionString</key>
@@ -131,6 +131,10 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>${MACOSX_BUNDLE_COPYRIGHT}</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>888 Slicer connects to your configured P1S printers to upload and start prints on your local network.</string>
 	<key>NSAppTransportSecurity</key>  
 	<dict>
 		<!-- Disable App Transport Security. Resolves https://github.com/OrcaSlicer/OrcaSlicer/issues/791 -->

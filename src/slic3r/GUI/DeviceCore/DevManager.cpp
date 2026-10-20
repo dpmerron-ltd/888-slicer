@@ -476,14 +476,16 @@ namespace Slic3r
         auto           it = localMachineList.find(machine.dev_id);
         if (it != localMachineList.end()) {
             obj = it->second;
-            // insert_local_device is called by the active agent, so a reused entry must follow
-            // that agent as well; otherwise the agent-scoped printer list hides it.
-            obj->printer_agent_id = get_current_printer_agent_id();
+            // Discovery follows the active agent. An offline config import explicitly
+            // identifies its agent even when another printer preset is selected.
+            obj->printer_agent_id = machine.printer_agent_id.empty() ? get_current_printer_agent_id() : machine.printer_agent_id;
         } else {
             obj = new MachineObject(this, m_agent, machine.dev_name, machine.dev_id, machine.dev_ip);
-            obj->printer_agent_id = get_current_printer_agent_id();
+            obj->printer_agent_id = machine.printer_agent_id.empty() ? get_current_printer_agent_id() : machine.printer_agent_id;
             localMachineList.insert(std::make_pair(machine.dev_id, obj));
         }
+        obj->set_dev_name(machine.dev_name);
+        obj->set_dev_ip(machine.dev_ip);
         if (machine.printer_type.empty())
             obj->printer_type = _parse_printer_type("C11");
         else

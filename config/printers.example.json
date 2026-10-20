@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "printers": [
+    {
+      "name": "Workshop P1S",
+      "model": "P1S",
+      "ip": "192.168.1.50",
+      "serial": "01P00EXAMPLE0001",
+      "access_code": "12345678"
+    },
+    {
+      "name": "Office P1S",
+      "model": "P1S",
+      "ip": "192.168.1.51",
+      "serial": "01P00EXAMPLE0002",
+      "access_code": "ABCDEFGH"
+    }
+  ]
+}

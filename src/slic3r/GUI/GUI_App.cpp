@@ -2688,7 +2688,8 @@ void GUI_App::init_webview_runtime()
 void GUI_App::init_app_config()
 {
 	// Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
-    SetAppName(SLIC3R_APP_KEY);
+    // Keep upstream resource/catalog names, but isolate the fork's saved settings.
+    SetAppName("888Slicer");
 //	SetAppName(SLIC3R_APP_KEY "-alpha");
 //  SetAppName(SLIC3R_APP_KEY "-beta");
 //	SetAppDisplayName(SLIC3R_APP_NAME);
@@ -6452,6 +6453,11 @@ void maybe_attach_updater_signature(Http& http, const std::string& canonical_que
 
 void GUI_App::check_new_version_sf(bool show_tips, int by_user)
 {
+    // Upstream installers would replace this fork and remove its LAN importer.
+    if (show_tips)
+        show_info(mainframe, _L("888 Slicer updates are installed using a new 888 Slicer build. Upstream OrcaSlicer installers do not include the LAN printer importer."));
+    return;
+
     AppConfig* app_config = wxGetApp().app_config;
     bool       check_stable_only = app_config->get_bool("check_stable_update_only");
     auto version_check_url = app_config->version_check_url();

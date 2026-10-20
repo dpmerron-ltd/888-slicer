@@ -178,6 +178,68 @@ TEST_CASE("Device manager filters and rehomes devices by printer-agent ownership
     CHECK(manager.get_my_machine_list("integration-agent-b").count(machine.dev_id) == 1);
 }
 
+TEST_CASE("Imported LAN printers retain their explicit agent and update saved connection details", "[DeviceManager][LanPrinterConfig][integration]")
+{
+    ScopedAppConfig app_config;
+    NetworkAgent network(nullptr, std::make_shared<TestPrinterAgent>("integration-agent"));
+    DeviceManager manager(&network, false, &app_config.config);
+
+    BBLocalMachine machine;
+    machine.dev_id           = "01P00EXAMPLE0001";
+    machine.dev_name         = "Workshop P1S";
+    machine.dev_ip           = "192.168.1.50";
+    machine.printer_type     = "C12";
+    machine.printer_agent_id = BBL_PRINTER_AGENT_ID;
+    machine.access_code      = "12345678";
+    auto* object = manager.insert_local_device(machine, "lan", "free", "", machine.access_code);
+    REQUIRE(object != nullptr);
+    CHECK(object->printer_agent_id == BBL_PRINTER_AGENT_ID);
+    CHECK(manager.get_my_machine_list("integration-agent").empty());
+    CHECK(manager.get_my_machine_list(BBL_PRINTER_AGENT_ID).count(machine.dev_id) == 1);
+    CHECK(app_config.config.get_local_machines().at(machine.dev_id) == machine);
+
+    machine.dev_name = "Renamed P1S";
+    machine.dev_ip = "192.168.1.60";
+    machine.access_code = "ABCDEFGH";
+    auto* updated = manager.insert_local_device(machine, "lan", "free", "", machine.access_code);
+    REQUIRE(updated == object);
+    CHECK(updated->get_dev_name() == machine.dev_name);
+    CHECK(updated->get_dev_ip() == machine.dev_ip);
+    CHECK(updated->get_access_code() == machine.access_code);
+    CHECK(updated->connection_type() == "lan");
+    CHECK(updated->local_use_ssl);
+    CHECK(updated->local_use_ssl_for_ftp);
+    CHECK(app_config.config.get_local_machines().size() == 1);
+    CHECK(app_config.config.get_local_machines().at(machine.dev_id) == machine);
+
+    // Restoring the same persisted records does not need account login or SSDP.
+    DeviceManager restored(&network, false, &app_config.config);
+    auto* recalled = restored.get_local_machine(machine.dev_id);
+    REQUIRE(recalled != nullptr);
+    CHECK(recalled->get_dev_ip() == machine.dev_ip);
+    CHECK(recalled->get_access_code() == machine.access_code);
+    CHECK(recalled->printer_agent_id == BBL_PRINTER_AGENT_ID);
+    CHECK(restored.get_my_machine_list(BBL_PRINTER_AGENT_ID).count(machine.dev_id) == 1);
+}
+
+TEST_CASE("Imported LAN printers can be saved before the network plugin is installed", "[DeviceManager][LanPrinterConfig][integration]")
+{
+    ScopedAppConfig app_config;
+    DeviceManager manager(nullptr, false, &app_config.config);
+    BBLocalMachine machine;
+    machine.dev_id           = "01P00EXAMPLE0001";
+    machine.dev_name         = "Workshop P1S";
+    machine.dev_ip           = "192.168.1.50";
+    machine.printer_type     = "C12";
+    machine.printer_agent_id = BBL_PRINTER_AGENT_ID;
+    machine.access_code      = "12345678";
+
+    auto* object = manager.insert_local_device(machine, "lan", "free", "", machine.access_code);
+    REQUIRE(object != nullptr);
+    CHECK(app_config.config.get_local_machines().at(machine.dev_id) == machine);
+    CHECK(object->printer_agent_id == BBL_PRINTER_AGENT_ID);
+}
+
 TEST_CASE("AMS filament settings keep legacy single-color commands compatible", "[DeviceManager][AMSMaterialsSetting][integration]")
 {
     ScopedAppConfig app_config;

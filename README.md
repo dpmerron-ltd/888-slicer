@@ -1,3 +1,12 @@
+# 888 Slicer — macOS P1S LAN fork
+
+This fork adds **File → Import → Import LAN Printers** for account-independent
+P1S slicing and local print submission. See the [installation and build guide](docs/888-slicer.md)
+and [example printer configuration](config/printers.example.json).
+Printer-side LAN/Developer Mode requirements still apply.
+
+The original OrcaSlicer documentation and attribution follow.
+
 <div align="center">
 
 <picture>

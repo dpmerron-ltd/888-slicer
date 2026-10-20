@@ -1,4 +1,5 @@
 src/slic3r/GUI/DeviceCore/DevBed.cpp
+src/libslic3r/LanPrinterConfig.cpp
 src/slic3r/GUI/DeviceCore/DevBed.h
 src/slic3r/GUI/DeviceCore/DevConfig.h
 src/slic3r/GUI/DeviceCore/DevConfig.cpp

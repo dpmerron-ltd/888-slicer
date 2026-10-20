@@ -38,6 +38,8 @@ set(lisbslic3r_sources
     AnyPtr.hpp
     AppConfig.cpp
     AppConfig.hpp
+    LanPrinterConfig.cpp
+    LanPrinterConfig.hpp
     Arachne/BeadingStrategy/BeadingStrategy.cpp
     Arachne/BeadingStrategy/BeadingStrategyFactory.cpp
     Arachne/BeadingStrategy/BeadingStrategyFactory.hpp

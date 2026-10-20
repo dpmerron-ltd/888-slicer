@@ -1,0 +1,48 @@
+name: Build 888 Slicer for macOS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: brew install cmake ninja automake texinfo libtool pkgconf yasm nasm
+      - name: Cache dependencies
+        id: deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps/build/${{ matrix.arch }}/OrcaSlicer_dep
+            deps/DL_CACHE
+          key: 888-macos-${{ matrix.os }}-${{ matrix.arch }}-no-cad-${{ hashFiles('deps/**', 'cmake/modules/ClangClShowIncludes.cmake') }}
+      - name: Test the config importer
+        run: |
+          cmake -S tests/lan_printer_config -B build/lan-printer-config -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/lan-printer-config --parallel 3
+          ctest --test-dir build/lan-printer-config -C Release --output-on-failure
+      - name: Build and package
+        env:
+          BUILD_JOBS: "3"
+          SKIP_DEPS: ${{ steps.deps.outputs.cache-hit == 'true' && '1' || '0' }}
+        run: bash scripts/build_888_macos.sh "${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 888-Slicer-${{ matrix.arch }}
+          path: dist/*.dmg
+          if-no-files-found: error
+          retention-days: 14
