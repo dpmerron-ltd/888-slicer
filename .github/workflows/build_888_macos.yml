@@ -2,6 +2,15 @@ name: Build 888 Slicer for macOS
 
 on:
   workflow_dispatch:
+    inputs:
+      architecture:
+        description: Mac architecture to build
+        type: choice
+        default: both
+        options:
+          - both
+          - arm64
+          - x86_64
 
 permissions:
   contents: read
@@ -11,20 +20,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-15
-            arch: arm64
-          - os: macos-15-intel
-            arch: x86_64
+        include: ${{ fromJSON(inputs.architecture == 'arm64' && '[{"os":"macos-15","arch":"arm64"}]' || inputs.architecture == 'x86_64' && '[{"os":"macos-15-intel","arch":"x86_64"}]' || '[{"os":"macos-15","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: brew install cmake ninja automake texinfo libtool pkgconf yasm nasm
-      - name: Cache dependencies
+      - name: Restore dependencies
         id: deps
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             deps/build/${{ matrix.arch }}/OrcaSlicer_dep
@@ -35,10 +40,22 @@ jobs:
           cmake -S tests/lan_printer_config -B build/lan-printer-config -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build/lan-printer-config --parallel 3
           ctest --test-dir build/lan-printer-config -C Release --output-on-failure
+      - name: Build dependencies
+        if: steps.deps.outputs.cache-hit != 'true'
+        run: ./build_release_macos.sh -d -x -a "${{ matrix.arch }}" -j 3 -- -DSLIC3R_CAD=OFF
+      # Preserve the expensive dependency build even if app compilation fails.
+      - name: Save dependencies
+        if: steps.deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            deps/build/${{ matrix.arch }}/OrcaSlicer_dep
+            deps/DL_CACHE
+          key: ${{ steps.deps.outputs.cache-primary-key }}
       - name: Build and package
         env:
           BUILD_JOBS: "3"
-          SKIP_DEPS: ${{ steps.deps.outputs.cache-hit == 'true' && '1' || '0' }}
+          SKIP_DEPS: "1"
         run: bash scripts/build_888_macos.sh "${{ matrix.arch }}"
       - uses: actions/upload-artifact@v4
         with:
