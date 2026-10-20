@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <initializer_list>
 #include <set>
 #include <stdexcept>

@@ -4,6 +4,7 @@
 #include "slic3r/Utils/NetworkAgentFactory.hpp"
 #include "slic3r/GUI/DeviceCore/DevManager.h"
 #include <wx/file.h>
+#include <wx/string.h>
 
 #include <wx/event.h>
 #include "slic3r/GUI/Event.hpp"

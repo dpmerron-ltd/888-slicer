@@ -13,6 +13,11 @@ if [ ! -x "$source_app/Contents/MacOS/OrcaSlicer" ]; then
     echo "Missing built application: $source_app" >&2
     exit 1
 fi
+if [ "$arch" = "universal" ]; then
+    lipo -verify_arch arm64 x86_64 "$source_app/Contents/MacOS/OrcaSlicer"
+else
+    lipo -verify_arch "$arch" "$source_app/Contents/MacOS/OrcaSlicer"
+fi
 
 mkdir -p "$repo_dir/dist"
 stage_dir="$(mktemp -d "$repo_dir/dist/888-slicer-$arch.XXXXXX")"
