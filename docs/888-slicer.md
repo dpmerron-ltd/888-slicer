@@ -97,7 +97,8 @@ bash scripts/build_888_macos.sh universal
 
 Builds require Apple's command-line development tools, internet access and
 substantial free disk space. `BUILD_JOBS` controls compilation parallelism
-(default 4). Output is in `dist/`, including a staged `.app` and a `.dmg`.
+(default 4). The `.dmg` is written to `dist/`; the script also reports the
+temporary staged `.app` path, kept outside synced folders for reliable signing.
 To repackage an already built app, use `bash scripts/package_888_macos.sh arm64`.
 GitHub Actions also provides a manually triggered **Build 888 Slicer for macOS**
 workflow that produces separate Apple Silicon and Intel disk images.

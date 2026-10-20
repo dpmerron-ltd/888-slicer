@@ -20,7 +20,9 @@ else
 fi
 
 mkdir -p "$repo_dir/dist"
-stage_dir="$(mktemp -d "$repo_dir/dist/888-slicer-$arch.XXXXXX")"
+# Stage outside a potentially file-provider-managed checkout: iCloud Desktop
+# can reapply Finder metadata immediately after xattr clears it.
+stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/888-slicer-$arch.XXXXXX")"
 app="$stage_dir/888 Slicer.app"
 ditto "$source_app" "$app"
 # Finder/file-provider metadata can invalidate code signing (notably when the
