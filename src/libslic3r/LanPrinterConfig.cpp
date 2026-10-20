@@ -130,7 +130,7 @@ std::vector<LanPrinterConfig> parse_lan_printer_config(const std::string& conten
             throw std::runtime_error(_u8L("Printer serial numbers must contain 10 to 32 letters and digits."));
         if (printer.access_code.size() != 8 || !is_ascii_alphanumeric(printer.access_code))
             throw std::runtime_error(_u8L("LAN access codes must contain exactly 8 letters and digits."));
-        // Orca's print selector matches devices by their display name.
+        // Distinct initial names make a fleet easier to identify in the device UI.
         if (!serials.insert(printer.serial).second || !addresses.insert(printer.ip).second ||
             !names.insert(printer.name).second)
             throw std::runtime_error(_u8L("Each printer must have a unique name, serial number and IP address in the configuration."));

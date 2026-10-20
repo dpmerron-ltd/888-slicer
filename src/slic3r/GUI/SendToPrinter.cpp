@@ -1130,17 +1130,6 @@ void SendToPrinterDialog::on_print_job_cancel(wxCommandEvent &evt)
     prepare_mode();
 }
 
-std::vector<std::string> SendToPrinterDialog::sort_string(std::vector<std::string> strArray)
-{
-    std::vector<std::string> outputArray;
-    std::sort(strArray.begin(), strArray.end());
-    std::vector<std::string>::iterator st;
-    for (st = strArray.begin(); st != strArray.end(); st++) { outputArray.push_back(*st); }
-
-    return outputArray;
-}
-
-
 bool  SendToPrinterDialog::is_timeout()
 {
     if (timeout_count > 15 * 1000 / LIST_REFRESH_INTERVAL) {
@@ -1168,31 +1157,30 @@ void SendToPrinterDialog::update_user_printer()
     // clear machine list
     m_list.clear();
     m_comboBox_printer->Clear();
-    std::vector<std::string>              machine_list;
     wxArrayString                         machine_list_name;
     std::map<std::string, MachineObject*> option_list;
 
     option_list = dev->get_my_machine_list(dev->get_current_printer_agent_id());
 
-    // same machine only appear once
+    // Keep device identity attached while sorting. Looking up a sorted name
+    // selects the first matching printer when discovery reports duplicate names.
     for (auto it = option_list.begin(); it != option_list.end(); it++) {
         if (it->second && (it->second->is_online() || it->second->is_connected())) {
-            machine_list.push_back(it->second->get_dev_name());
+            m_list.push_back(it->second);
         }
     }
-    machine_list = sort_string(machine_list);
-    for (auto tt = machine_list.begin(); tt != machine_list.end(); tt++) {
-        for (auto it = option_list.begin(); it != option_list.end(); it++) {
-            if (it->second->get_dev_name() == *tt) {
-                m_list.push_back(it->second);
-                wxString dev_name_text = from_u8(it->second->get_dev_name());
-                if (it->second->is_lan_mode_printer()) {
-                    dev_name_text += _L("(LAN)");
-                }
-                machine_list_name.Add(dev_name_text);
-                break;
-            }
+    std::sort(m_list.begin(), m_list.end(), [](const MachineObject* lhs, const MachineObject* rhs) {
+        if (lhs->get_dev_name() != rhs->get_dev_name())
+            return lhs->get_dev_name() < rhs->get_dev_name();
+        return lhs->get_dev_id() < rhs->get_dev_id();
+    });
+    for (const auto* machine : m_list) {
+        wxString dev_name_text = from_u8(machine->get_dev_name());
+        if (machine->is_lan_mode_printer()) {
+            // TRN %1% is the printer name; %2% is its serial number.
+            dev_name_text = format_wxstr(_L("%1% (LAN, %2%)"), machine->get_dev_name(), machine->get_dev_id());
         }
+        machine_list_name.Add(dev_name_text);
     }
 
     m_comboBox_printer->Set(machine_list_name);

@@ -3973,15 +3973,20 @@ void MainFrame::import_lan_printers()
     std::vector<LanPrinterConfig> printers;
     try {
         wxFile file(dialog.GetPath(), wxFile::read);
-        if (!file.IsOpened() || file.Length() < 0) {
+        if (!file.IsOpened()) {
             show_error(this, _L("Could not read the LAN printer configuration."));
             return;
         }
-        if (file.Length() > static_cast<wxFileOffset>(MAX_LAN_PRINTER_CONFIG_BYTES)) {
+        const auto length = file.Length();
+        if (length < 0) {
+            show_error(this, _L("Could not read the LAN printer configuration."));
+            return;
+        }
+        if (length > static_cast<wxFileOffset>(MAX_LAN_PRINTER_CONFIG_BYTES)) {
             show_error(this, _L("The LAN printer configuration exceeds the 1 MiB size limit."));
             return;
         }
-        std::string contents(static_cast<std::size_t>(file.Length()), '\0');
+        std::string contents(static_cast<std::size_t>(length), '\0');
         const auto bytes_read = file.Read(contents.data(), contents.size());
         if (bytes_read < 0 || static_cast<std::size_t>(bytes_read) != contents.size()) {
             show_error(this, _L("Could not read the LAN printer configuration."));

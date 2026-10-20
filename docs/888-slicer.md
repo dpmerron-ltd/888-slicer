@@ -5,6 +5,8 @@ LAN printers. It retains Orca's slicer and uses its existing encrypted local
 upload/print path. There is no account password, cloud token or account rebinding
 in the imported configuration.
 
+Fork source: [dpmerron-ltd/888-slicer](https://github.com/dpmerron-ltd/888-slicer).
+
 ## Install and print
 
 1. Open the disk image for your Mac (`arm64` for Apple Silicon, `x86_64` for Intel;
@@ -19,7 +21,7 @@ in the imported configuration.
    example printer you do not need. Use different names for each printer.
 4. Choose **File → Import → Import LAN Printers**, then select your JSON file.
 5. Load a model, select the appropriate P1S nozzle/material settings, and slice.
-   Choose **Print plate**, select the imported printer marked **(LAN)**, check
+   Choose **Print plate**, select the imported printer marked **LAN** with its serial number, check
    filament/AMS mapping and print options, and start the print.
 
 Importing does not connect to new printers or start a print. Reimporting updates entries
